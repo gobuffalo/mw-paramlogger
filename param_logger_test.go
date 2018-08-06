@@ -1,4 +1,4 @@
-package middleware
+package paramlogger
 
 import (
 	"net/url"
@@ -12,9 +12,8 @@ import (
 
 func Test_maskSecrets(t *testing.T) {
 	r := require.New(t)
-	pl := parameterLogger{}
 
-	filteredForm := pl.maskSecrets(url.Values{
+	filteredForm := maskSecrets(url.Values{
 		"FirstName":            []string{"Antonio"},
 		"MiddleName":           []string{"José"},
 		"LastName":             []string{"Pagano"},
@@ -36,13 +35,9 @@ func Test_maskSecrets(t *testing.T) {
 
 func Test_maskSecretsCustom(t *testing.T) {
 	r := require.New(t)
-	pl := parameterLogger{
-		blacklist: []string{
-			"FirstName", "LastName", "MiddleName",
-		},
-	}
+	ParameterExclusionList = []string{"FirstName", "LastName", "MiddleName"}
 
-	filteredForm := pl.maskSecrets(url.Values{
+	filteredForm := maskSecrets(url.Values{
 		"FirstName":            []string{"Antonio"},
 		"MiddleName":           []string{"José"},
 		"LastName":             []string{"Pagano"},
@@ -96,7 +91,7 @@ func newTestLogger() testLogger {
 func Test_Logger(t *testing.T) {
 	r := require.New(t)
 	app := buffalo.New(buffalo.Options{})
-	app.Use(ParameterLogger)
+	app.Use(Middleware)
 	app.Logger = newTestLogger()
 	emptyHandler := func(c buffalo.Context) error {
 		return nil

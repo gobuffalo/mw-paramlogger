@@ -1,4 +1,4 @@
-package middleware
+package paramlogger
 
 import (
 	"encoding/json"
@@ -10,9 +10,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-//ParameterExclusionList is the list of parameter names that will be filtered
-//from the application logs (see maskSecrets).
-//Important: this list will be used in case insensitive.
+// ParameterExclusionList is the list of parameter names that will be filtered
+// from the application logs (see maskSecrets).
+// Important: this list will be used in case insensitive.
 var ParameterExclusionList = []string{
 	"Password",
 	"PasswordConfirmation",
@@ -22,22 +22,13 @@ var ParameterExclusionList = []string{
 
 var filteredIndicator = []string{"[FILTERED]"}
 
-// ParameterLogger logs form and parameter values to the logger
-type parameterLogger struct {
-	blacklist []string
-}
-
-// ParameterLogger logs form and parameter values to the loggers
-func ParameterLogger(next buffalo.Handler) buffalo.Handler {
-	pl := parameterLogger{
-		blacklist: ParameterExclusionList,
-	}
-
+// Middleware is a buffalo middleware function to connect this parameter filterer with buffalo
+func Middleware(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
 		defer func() {
 			req := c.Request()
 			if req.Method != "GET" {
-				if err := pl.logForm(c); err != nil {
+				if err := logForm(c); err != nil {
 					c.Logger().Error(err)
 				}
 			}
@@ -54,44 +45,21 @@ func ParameterLogger(next buffalo.Handler) buffalo.Handler {
 	}
 }
 
-//Middleware is a buffalo middleware function to connect this parameter filterer with buffalo
-func (pl parameterLogger) Middleware(next buffalo.Handler) buffalo.Handler {
-	return func(c buffalo.Context) error {
-		defer func() {
-			req := c.Request()
-			if req.Method != "GET" {
-				if err := pl.logForm(c); err != nil {
-					c.Logger().Error(err)
-				}
-			}
-
-			b, err := json.Marshal(c.Params())
-			if err != nil {
-				c.Logger().Error(err)
-			}
-
-			c.LogField("params", string(b))
-		}()
-
-		return next(c)
-	}
-}
-
-func (pl parameterLogger) logForm(c buffalo.Context) error {
+func logForm(c buffalo.Context) error {
 	req := c.Request()
 	mp := req.MultipartForm
 	if mp != nil {
-		return pl.multipartParamLogger(mp, c)
+		return multipartParamLogger(mp, c)
 	}
 
-	if err := pl.addFormFieldTo(c, req.Form); err != nil {
+	if err := addFormFieldTo(c, req.Form); err != nil {
 		return errors.WithStack(err)
 	}
 
 	return nil
 }
 
-func (pl parameterLogger) multipartParamLogger(mp *multipart.Form, c buffalo.Context) error {
+func multipartParamLogger(mp *multipart.Form, c buffalo.Context) error {
 	uv := url.Values{}
 	for k, v := range mp.Value {
 		for _, vv := range v {
@@ -104,14 +72,14 @@ func (pl parameterLogger) multipartParamLogger(mp *multipart.Form, c buffalo.Con
 		}
 	}
 
-	if err := pl.addFormFieldTo(c, uv); err != nil {
+	if err := addFormFieldTo(c, uv); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil
 }
 
-func (pl parameterLogger) addFormFieldTo(c buffalo.Context, form url.Values) error {
-	maskedForm := pl.maskSecrets(form)
+func addFormFieldTo(c buffalo.Context, form url.Values) error {
+	maskedForm := maskSecrets(form)
 	b, err := json.Marshal(maskedForm)
 
 	if err != nil {
@@ -122,22 +90,18 @@ func (pl parameterLogger) addFormFieldTo(c buffalo.Context, form url.Values) err
 	return nil
 }
 
-//maskSecrets matches ParameterExclusionList against parameters passed in the
-//request, and returns a copy of the request parameters replacing blacklisted params
-//with [FILTERED].
-func (pl parameterLogger) maskSecrets(form url.Values) url.Values {
-	if len(pl.blacklist) == 0 {
-		pl.blacklist = ParameterExclusionList
-	}
-
+// maskSecrets matches ParameterExclusionList against parameters passed in the
+// request, and returns a copy of the request parameters replacing excluded params
+// with [FILTERED].
+func maskSecrets(form url.Values) url.Values {
 	copy := url.Values{}
 	for key, values := range form {
-	blcheck:
-		for _, blacklisted := range pl.blacklist {
+	exclcheck:
+		for _, excluded := range ParameterExclusionList {
 			copy[key] = values
-			if strings.ToUpper(key) == strings.ToUpper(blacklisted) {
+			if strings.EqualFold(key, excluded) {
 				copy[key] = filteredIndicator
-				break blcheck
+				break exclcheck
 			}
 
 		}
