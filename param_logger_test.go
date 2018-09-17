@@ -106,9 +106,10 @@ func Test_Logger(t *testing.T) {
 	app.POST("/", emptyHandler)
 
 	wi := willie.New(app)
-	wi.HTML("/?param=value").Get()
+	wi.HTML("/?param=value&CVC=123").Get()
 
-	r.Contains(lastEntry.Data["params"], "{\"param\":[\"value\"]}")
+	r.Contains(lastEntry.Data["params"], `"param":["value"]`)
+	r.Contains(lastEntry.Data["params"], `"CVC":["[FILTERED]"]`)
 
 	wi.HTML("/").Post(url.Values{
 		"Password": []string{"123"},

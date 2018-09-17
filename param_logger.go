@@ -47,7 +47,12 @@ func (pl parameterLogger) Middleware(next buffalo.Handler) buffalo.Handler {
 				}
 			}
 
-			b, err := json.Marshal(c.Params())
+			params, ok := c.Params().(url.Values)
+			if ok {
+				params = pl.maskSecrets(params)
+			}
+
+			b, err := json.Marshal(params)
 			if err != nil {
 				c.Logger().Error(err)
 			}
