@@ -111,7 +111,7 @@ func Test_Logger(t *testing.T) {
 	r.Contains(lastEntry.Data["params"], `"param":["value"]`)
 	r.Contains(lastEntry.Data["params"], `"CVC":["[FILTERED]"]`)
 
-	wi.HTML("/").Post(url.Values{
+	wi.HTML("/?Cvc=123").Post(url.Values{
 		"Password": []string{"123"},
 		"Name":     []string{"Antonio"},
 		"CVC":      []string{"123"},
@@ -120,4 +120,7 @@ func Test_Logger(t *testing.T) {
 	r.Contains(lastEntry.Data["form"], "\"CVC\":[\"[FILTERED]\"]")
 	r.Contains(lastEntry.Data["form"], "\"Name\":[\"Antonio\"]")
 	r.Contains(lastEntry.Data["form"], "\"Password\":[\"[FILTERED]\"]")
+
+	r.Contains(lastEntry.Data["params"], "\"CVC\":[\"[FILTERED]\"]")
+	r.Contains(lastEntry.Data["params"], "\"Password\":[\"[FILTERED]\"]")
 }
