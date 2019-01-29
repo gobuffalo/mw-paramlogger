@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/gobuffalo/buffalo"
-	"github.com/markbates/willie"
+	"github.com/gobuffalo/httptest"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
@@ -105,7 +105,7 @@ func Test_Logger(t *testing.T) {
 	app.GET("/", emptyHandler)
 	app.POST("/", emptyHandler)
 
-	wi := willie.New(app)
+	wi := httptest.New(app)
 	wi.HTML("/?param=value&CVC=123").Get()
 
 	r.Contains(lastEntry.Data["params"], `"param":["value"]`)
