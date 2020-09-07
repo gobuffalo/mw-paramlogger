@@ -27,13 +27,19 @@ type parameterLogger struct {
 	excluded []string
 }
 
+func ParameterLoggerFiltering(customParams []string) buffalo.MiddlewareFunc {
+	return func(next buffalo.Handler) buffalo.Handler {
+		pl := parameterLogger{
+			excluded: append(ParameterExclusionList, customParams...),
+		}
+
+		return pl.Middleware(next)
+	}
+}
+
 // ParameterLogger logs form and parameter values to the loggers
 func ParameterLogger(next buffalo.Handler) buffalo.Handler {
-	pl := parameterLogger{
-		excluded: ParameterExclusionList,
-	}
-
-	return pl.Middleware(next)
+	return ParameterLoggerFiltering([]string{})(next)
 }
 
 // Middleware is a buffalo middleware function to connect this parameter filterer with buffalo

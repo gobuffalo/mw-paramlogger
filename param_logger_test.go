@@ -124,3 +124,40 @@ func Test_Logger(t *testing.T) {
 	r.Contains(lastEntry.Data["params"], "\"CVC\":[\"[FILTERED]\"]")
 	r.Contains(lastEntry.Data["params"], "\"Password\":[\"[FILTERED]\"]")
 }
+
+func Test_LoggerCustom(t *testing.T) {
+	r := require.New(t)
+	app := buffalo.New(buffalo.Options{})
+	app.Use(ParameterLoggerFiltering([]string{"should_be_filtered", "this_too"}))
+	app.Logger = newTestLogger()
+	emptyHandler := func(c buffalo.Context) error {
+		return nil
+	}
+
+	app.GET("/", emptyHandler)
+	app.POST("/", emptyHandler)
+
+	wi := httptest.New(app)
+	wi.HTML("/?param=value&CVC=123&should_be_filtered=foo&ThIs_ToO=bar").Get()
+
+	r.Contains(lastEntry.Data["params"], `"param":["value"]`)
+	r.Contains(lastEntry.Data["params"], `"CVC":["[FILTERED]"]`)
+	r.Contains(lastEntry.Data["params"], `"should_be_filtered":["[FILTERED]"]`)
+	r.Contains(lastEntry.Data["params"], `"ThIs_ToO":["[FILTERED]"]`)
+
+	wi.HTML("/?Cvc=123&this_TOO=456").Post(url.Values{
+		"Password":           []string{"123"},
+		"Name":               []string{"Antonio"},
+		"CVC":                []string{"123"},
+		"SHOULD_be_FILTERED": []string{"foobarbaz"},
+	})
+
+	r.Contains(lastEntry.Data["form"], "\"CVC\":[\"[FILTERED]\"]")
+	r.Contains(lastEntry.Data["form"], "\"Name\":[\"Antonio\"]")
+	r.Contains(lastEntry.Data["form"], "\"Password\":[\"[FILTERED]\"]")
+	r.Contains(lastEntry.Data["form"], "\"SHOULD_be_FILTERED\":[\"[FILTERED]\"]")
+
+	r.Contains(lastEntry.Data["params"], "\"CVC\":[\"[FILTERED]\"]")
+	r.Contains(lastEntry.Data["params"], "\"this_TOO\":[\"[FILTERED]\"]")
+	r.Contains(lastEntry.Data["params"], "\"Password\":[\"[FILTERED]\"]")
+}
