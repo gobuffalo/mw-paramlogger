@@ -1,7 +1,10 @@
 # mw-paramlogger
 
-[![](https://github.com/gobuffalo/mw-paramlogger/workflows/Tests/badge.svg)](https://github.com/gobuffalo/mw-paramlogger/actions)
-[![GoDoc](https://godoc.org/github.com/gobuffalo/mw-paramlogger?status.svg)](https://godoc.org/github.com/gobuffalo/mw-paramlogger)
+[![Standard Test](https://github.com/gobuffalo/mw-paramlogger/actions/workflows/standard-go-test.yml/badge.svg)](https://github.com/gobuffalo/mw-paramlogger/actions/workflows/standard-go-test.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/gobuffalo/mw-paramlogger.svg)](https://pkg.go.dev/github.com/gobuffalo/mw-paramlogger)
+
+NOTE: v1.0.2 will be the last version of this module and it will be deprecated.
+Use <https://github.com/gobuffalo/middleware> instead.
 
 ### Requirements
 
